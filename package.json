@@ -1,0 +1,16 @@
+{
+  "name": "emberhacks-root",
+  "private": true,
+  "version": "1.0.0",
+  "main": "electron-app/main.js",
+  "scripts": {
+    "build-frontend": "npm --prefix frontend run build",
+    "copy-build": "node ./copy-build-files.js",
+    "start-electron": "electron .",
+    "electron": "npm run build-frontend && npm run copy-build && npm run start-electron"
+  },
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "fs-extra": "^11.3.2"
+  }
+}
