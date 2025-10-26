@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        FORCE_PLAYWRIGHT_INSTALL: '0' # set to '1' to force playwright install during build
+    image: emberhacks-backend:dev
+    ports:
+      - '8000:8000'
+    env_file:
+      - ./backend/.env
+    tty: true
+    stdin_open: true
+    # For iteration: mount current workspace so code changes are immediate
+    volumes:
+      - ./:/app
+    # Use host networking on Linux if you need access to UI; Windows/Mac keep default
+    # network_mode: host
