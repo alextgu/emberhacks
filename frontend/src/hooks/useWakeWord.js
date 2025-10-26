@@ -10,6 +10,12 @@ import { PorcupineWorker } from "@picovoice/porcupine-web";
 export const useWakeWord = (accessKey, onDetected) => {
   const porcupineRef = useRef(null);
   const [status, setStatus] = useState("initializing");
+  const onDetectedRef = useRef(onDetected);
+
+  // Update the ref when callback changes, but don't reinitialize
+  useEffect(() => {
+    onDetectedRef.current = onDetected;
+  }, [onDetected]);
 
   useEffect(() => {
     let mounted = true;
@@ -19,8 +25,8 @@ export const useWakeWord = (accessKey, onDetected) => {
     const init = async () => {
       try {
         if (!accessKey) {
-          console.error("❌ No Porcupine access key provided!");
-          setStatus("error");
+          // If no key provided, stay inactive (not an error)
+          setStatus("inactive");
           return;
         }
 
@@ -64,7 +70,7 @@ export const useWakeWord = (accessKey, onDetected) => {
           (keyword) => {
             if (!mounted) return;
             console.log("🎉 Wake word detected:", keyword);
-            onDetected && onDetected();
+            onDetectedRef.current && onDetectedRef.current();
           },
           porcupineModel
         );
@@ -107,9 +113,12 @@ export const useWakeWord = (accessKey, onDetected) => {
       mounted = false;
       if (audioContext) audioContext.close();
       if (micStream) micStream.getTracks().forEach((t) => t.stop());
-      if (porcupineRef.current) porcupineRef.current.release();
+      if (porcupineRef.current) {
+        porcupineRef.current.release();
+        porcupineRef.current = null;
+      }
     };
-  }, [accessKey, onDetected]);
+  }, [accessKey]); // Only reinitialize if accessKey changes
 
   return status;
 };

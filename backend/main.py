@@ -1,19 +1,26 @@
 import os 
 import sys
-# .\venv\Scripts\python.exe .\backend\main.py
+from pathlib import Path
+
+# Get the project root directory (parent of backend folder)
+project_root = Path(__file__).parent.parent
+env_path = project_root / '.env'
+
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file
-load_dotenv()
+# Load environment variables from project root .env file
+load_dotenv(dotenv_path=env_path)
 import google.generativeai as genai
 from elevenlabs_utils import transcribe_audio_file
 from flask import Flask, request, jsonify
 from agent_runner import AgentRunner
 
-# Initialize genai Client from environment to avoid embedding secrets in code.
+# Initialize genai from environment to avoid embedding secrets in code.
 api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
-    client = genai.Client(api_key=api_key)
+    genai.configure(api_key=api_key)
+    # Create a client reference for agent_runner
+    client = genai
 else:
     sys.exit(
         "Missing API credentials for Google GenAI.\n"
@@ -51,9 +58,6 @@ def denormalize_y(y: int, screen_height: int) -> int:
 
 @app.route('/transcribe_audio', methods=['POST'])
 def api_transcribe_audio():
-    if not agent.running:
-        return jsonify({"error": "Agent not running"}), 400
-
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
@@ -62,12 +66,14 @@ def api_transcribe_audio():
     file.save(temp_path)
 
     try:
-        transcription = transcribe_audio_file(temp_path)  # <-- use your existing function
+        transcription = transcribe_audio_file(temp_path)
+        
+        # Queue transcription text into the agent if it's running
+        if agent.running and transcription:
+            agent.enqueue_command(transcription)
     finally:
-        os.remove(temp_path)
-
-    # Queue transcription text into the agent
-    agent.enqueue_command(transcription) # type: ignore
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     return jsonify({"status": "transcribed", "text": transcription})
 

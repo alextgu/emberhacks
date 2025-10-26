@@ -1,10 +1,12 @@
 import os 
 import sys
-# .\venv\Scripts\python.exe .\backend\main.py
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file
-load_dotenv()
+# Load environment variables from project root
+project_root = Path(__file__).parent.parent
+env_path = project_root / '.env'
+load_dotenv(dotenv_path=env_path)
 
 import time
 from typing import Any, List, Tuple
