@@ -145,11 +145,17 @@ export function useRecorder() {
             body: formData,
           });
 
+          console.log("📥 Backend response status:", response.status);
+
           if (!response.ok) {
+            const errorText = await response.text();
+            console.error("❌ Backend error response:", errorText);
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
           const data = await response.json();
+          console.log("📦 Backend response data:", data);
+          
           if (data.text) {
             setTranscribedText(data.text);
             console.log("✅ Transcription:", data.text);
