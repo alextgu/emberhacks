@@ -1,13 +1,24 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useWakeWord } from "./hooks/useWakeWord"; // adjust path if needed
+import React, { useState, useCallback } from "react";
+import { useWakeWord } from "./hooks/useWakeWord";
 
 export default function App() {
   const [textQuery, setTextQuery] = useState("");
+  const [detectionCount, setDetectionCount] = useState(0);
+  const [lastDetection, setLastDetection] = useState(null);
 
-  // Callback when wake word is detected - memoized to prevent re-initialization
   const handleWakeWord = useCallback(() => {
-    console.log("✅ Wake word detected in App! Focusing input...");
-    // Example: focus the input field
+    console.log("✅✅✅ WAKE WORD DETECTED IN APP! ✅✅✅");
+    const now = new Date().toLocaleTimeString();
+    setLastDetection(now);
+    setDetectionCount(prev => prev + 1);
+    
+    // Flash the screen
+    document.body.style.backgroundColor = "#00ff00";
+    setTimeout(() => {
+      document.body.style.backgroundColor = "";
+    }, 200);
+    
+    // Focus the input field
     const input = document.querySelector("input");
     if (input) {
       input.focus();
@@ -15,17 +26,7 @@ export default function App() {
     }
   }, []);
 
-  // Initialize Porcupine wake word - call hook at top level
   const key = import.meta.env.VITE_PORCUPINE_KEY;
-  
-  useEffect(() => {
-    console.log("🟢 App mounted, initializing wake word...");
-    if (!key) {
-      console.error("❌ Porcupine key not found!");
-    }
-  }, [key]);
-
-  // Call the hook at the top level (not inside useEffect) and get status
   const micStatus = useWakeWord(key, handleWakeWord);
 
   return (
@@ -38,6 +39,14 @@ export default function App() {
           {micStatus === 'active' ? '🎤 Listening for "Hey Zed"' : micStatus === 'error' ? '❌ Mic Error' : '⏳ Initializing...'}
         </span>
       </div>
+
+      {/* Detection Counter */}
+      {detectionCount > 0 && (
+        <div className="absolute top-24 right-8 px-6 py-3 bg-green-500/90 backdrop-blur-md rounded-xl border-2 border-green-300 animate-bounce">
+          <div className="text-white font-bold text-lg">🎉 Detected: {detectionCount}x</div>
+          <div className="text-white/80 text-xs">Last: {lastDetection}</div>
+        </div>
+      )}
 
       {/* ZED Title */}
       <h1 className="text-8xl font-bold tracking-[0.25em] mb-16 text-[#b3b8ff] drop-shadow-[0_0_25px_#7a5cff] animate-pulse">

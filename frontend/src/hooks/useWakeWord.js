@@ -7,36 +7,44 @@ export const useWakeWord = (accessKey, onDetected) => {
 
   useEffect(() => {
     let mounted = true;
+    let audioContext = null;
+    let micStream = null;
 
     const init = async () => {
       try {
         if (!accessKey) {
           console.error("❌ No Porcupine access key provided!");
-          console.error("📝 Create a .env file with: VITE_PORCUPINE_KEY=your_key");
-          console.error("🔗 Get a free key at: https://console.picovoice.ai/");
           setStatus("error");
           return;
         }
 
         console.log("🎙 Requesting microphone...");
         setStatus("requesting_mic");
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log("✅ Microphone access granted:", stream.getAudioTracks()[0].label);
-        setStatus("loading_model");
-
-        console.log("🧠 Loading Hey Zed model...");
+        micStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            sampleRate: 16000,
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } 
+        });
         
-        // Define the custom keyword model
+        const track = micStream.getAudioTracks()[0];
+        console.log("✅ Microphone access granted:", track.label);
+        
+        setStatus("loading_model");
+        console.log("🧠 Loading Hey Zed model...");
+
         const keywordModel = {
           publicPath: "/models/Hey-Zed_en_wasm_v3_0_0.ppn",
           label: "hey zed",
-          sensitivity: 0.5, // Lowered sensitivity for easier detection (0.0 = most sensitive, 1.0 = least sensitive)
+          sensitivity: 0.5,
           customWritePath: "hey_zed_keyword",
           forceWrite: true,
           version: 1,
         };
 
-        // Define the Porcupine model
         const porcupineModel = {
           publicPath: "/models/porcupine_params.pv",
           customWritePath: "porcupine_model",
@@ -47,20 +55,47 @@ export const useWakeWord = (accessKey, onDetected) => {
         const porcupine = await PorcupineWorker.create(
           accessKey,
           [keywordModel],
-          (keywordIndex) => {
+          (keyword) => {
             if (!mounted) return;
             console.log("🎉🎉🎉 WAKE WORD DETECTED! 🎉🎉🎉");
-            console.log("Keyword index:", keywordIndex);
+            console.log("Detected keyword:", keyword);
             onDetected();
           },
           porcupineModel
         );
 
         porcupineRef.current = porcupine;
+        
+        // Set up audio processing
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: porcupine.sampleRate
+        });
+        
+        const source = audioContext.createMediaStreamSource(micStream);
+        const processor = audioContext.createScriptProcessor(porcupine.frameLength, 1, 1);
+        
+        console.log("🎵 Audio context created:");
+        console.log("  - Sample rate:", audioContext.sampleRate);
+        console.log("  - Frame length:", porcupine.frameLength);
+        
+        processor.onaudioprocess = (event) => {
+          if (!mounted || !porcupineRef.current) return;
+          
+          const inputData = event.inputBuffer.getChannelData(0);
+          const pcm = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            pcm[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+          }
+          
+          porcupineRef.current.process(pcm);
+        };
+        
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+        
         setStatus("active");
-        console.log("🔊 Porcupine initialized and actively listening for 'Hey Zed'...");
+        console.log("🔊 Porcupine initialized and listening for 'Hey Zed'!");
         console.log("💡 Try saying: 'Hey Zed' clearly into your microphone");
-        console.log("🎚️ Sensitivity set to 0.5 (lower = more sensitive)");
       } catch (err) {
         console.error("❌ Porcupine init failed:", err);
         setStatus("error");
@@ -71,7 +106,15 @@ export const useWakeWord = (accessKey, onDetected) => {
 
     return () => {
       mounted = false;
-      if (porcupineRef.current) porcupineRef.current.release();
+      if (audioContext) {
+        audioContext.close();
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+      }
+      if (porcupineRef.current) {
+        porcupineRef.current.release();
+      }
     };
   }, [accessKey, onDetected]);
 
