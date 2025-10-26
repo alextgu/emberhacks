@@ -19,9 +19,7 @@ from agent_runner import AgentRunner
 # Initialize genai from environment to avoid embedding secrets in code.
 api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
-    genai.Client(api_key=api_key)
-    # Create a client reference for agent_runner
-    client = genai
+    client = genai.Client(api_key=api_key)
 else:
     sys.exit(
         "Missing API credentials for Google GenAI.\n"
