@@ -12,5 +12,9 @@
   "devDependencies": {
     "electron": "^26.0.0",
     "fs-extra": "^11.3.2"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.16",
+    "tailwindcss": "^4.1.16"
   }
 }
