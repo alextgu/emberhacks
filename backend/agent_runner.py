@@ -1,6 +1,10 @@
 import os 
+<<<<<<< HEAD
 import sys
 from pathlib import Path
+=======
+# .\venv\Scripts\python.exe .\backend\main.py
+>>>>>>> a6a9a621c769f20d39d7ab13261796b18130cf92
 from dotenv import load_dotenv
 
 # Load environment variables from project root
@@ -9,18 +13,12 @@ env_path = project_root / '.env'
 load_dotenv(dotenv_path=env_path)
 
 import time
-from typing import Any, List, Tuple
 from playwright.sync_api import sync_playwright
 from google.genai import errors as genai_errors
 from google import genai
 import re
 from google.genai import types
 from google.genai.types import Content, Part
-import termcolor
-import base64
-import json
-from elevenlabs_utils import transcribe_audio_file 
-from flask import Flask, request, jsonify
 from browser_computer import BrowserComputer
 from action_handler import ActionHandler
 import threading
@@ -301,8 +299,15 @@ class AgentRunner:
 
         This prevents repeating the same long message and keeps the field size bounded.
         """
+        # allow caller to skip the automatic summarization step by passing a
+        # tuple (msg, skip_summarize) or by internal calls that set
+        # skip_summarize=True. Backwards compatible behavior: if a string is
+        # passed, perform summarization.
+        skip_summarize = False
         if msg is None:
             return
+        if isinstance(msg, tuple) and len(msg) == 2:
+            msg, skip_summarize = msg  # type: ignore
         try:
             s = str(msg).strip()
         except Exception:
@@ -318,6 +323,56 @@ class AgentRunner:
                 return
             self.relevant_update = s
             self.update_id += 1
+
+        # After releasing the lock, call the regular (non-computer-use) Gemini
+        # model to produce a concise, student-focused summary of the relevant
+        # update. Avoid recursion by allowing this call to set the summary
+        # with skip_summarize=True.
+        if not skip_summarize:
+            try:
+                summary = self._summarize_relevant_update(s)
+                if summary:
+                    # Only set if the summary meaningfully differs to avoid
+                    # extra API calls / update churn. Use skip_summarize to
+                    # prevent re-entering this block.
+                    if summary.strip() and summary.strip() != s:
+                        # Use tuple form to pass skip flag
+                        self._set_relevant_update((summary, True)) # type: ignore
+            except Exception as e:
+                # Don't let summarization failures break the agent; just log
+                print(f"Warning: summarization failed: {e}")
+
+    def _summarize_relevant_update(self, text: str) -> str | None:
+        """Call the regular Gemini API to produce a concise summary.
+
+        Returns the summarized text or None on failure.
+        """
+        try:
+            # Build a short system instruction and user payload. Keep the
+            # request minimal and use the regular Gemini model (no
+            # computer-use tools).
+            system_instr = (
+                "You are a helpful assistant that summarizes text and helps students understand key concepts." \
+                "Remove any unnecessary jargon such as related to completing steps, repetition, or filler words. Focus on clarity and conciseness." \
+            )
+
+            contents = [
+                Content(role="system", parts=[Part.from_text(text=system_instr)]),
+                Content(role="user", parts=[Part.from_text(text=text)]),
+            ]
+
+            api_key = os.getenv("GOOGLE_API_KEY")
+            client = genai.Client(api_key=api_key)
+
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=system_instr + "\n" + text
+            )
+
+            return response.text
+        except Exception as e:
+            print(f"Error summarizing relevant_update: {e}")
+            return None
 
     def _run_loop(self):
         # persistent loop: try to complete current goal, and accept commands
