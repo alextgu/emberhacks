@@ -117,6 +117,8 @@ export function useRecorder() {
         const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
         setAudioBlob(blob);
 
+        console.log(`🎵 Audio blob created: ${blob.size} bytes, ${audioChunksRef.current.length} chunks`);
+
         // Check if blob has data
         if (blob.size === 0) {
           console.log("⚠️ No audio data recorded");
@@ -129,6 +131,7 @@ export function useRecorder() {
 
         setIsTranscribing(true);
         console.log("📤 Sending audio to backend for transcription...");
+        console.log("🔗 Backend URL: http://localhost:8000/transcribe_audio");
 
         try {
           // Try to connect to backend
