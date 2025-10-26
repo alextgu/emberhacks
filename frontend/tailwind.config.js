@@ -13,7 +13,12 @@ export default {
         'x-6': '6deg',
         'y-6': '6deg',
       },
+
+      /* 🌐 Global font setup */
+      fontFamily: {
+        sans: ["Verdana", "Geneva", "sans-serif"],
+      },
     },
   },
   plugins: [],
-}
+};

@@ -8,15 +8,9 @@ env_path = project_root / '.env'
 
 from dotenv import load_dotenv
 
-<<<<<<< HEAD
 # Load environment variables from project root .env file
 load_dotenv(dotenv_path=env_path)
 import google.generativeai as genai
-=======
-# Load environment variables from a .env file
-load_dotenv()
-from google import genai
->>>>>>> a6a9a621c769f20d39d7ab13261796b18130cf92
 from elevenlabs_utils import transcribe_audio_file
 from flask import Flask, request, jsonify
 from agent_runner import AgentRunner

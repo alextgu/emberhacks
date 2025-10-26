@@ -13,15 +13,13 @@ export default function App() {
   const [showInput, setShowInput] = useState(false);
   const [query, setQuery] = useState("");
 
-  // --- Mic + wake word states ---
   const [micStatus, setMicStatus] = useState("initializing");
   const [detectionCount, setDetectionCount] = useState(0);
   const [lastDetection, setLastDetection] = useState("");
 
-  // --- Recorder hook ---
-  const { recording, transcribedText, isTranscribing, startRecording, stopRecording } = useRecorder();
+  const { recording, transcribedText, isTranscribing, startRecording, stopRecording } =
+    useRecorder();
 
-  // --- Mouse 3D tilt ---
   const handleMouseMove = (e) => {
     const x = (window.innerHeight / 2 - e.clientY) / 200;
     const y = (e.clientX - window.innerWidth / 2) / 200;
@@ -29,27 +27,22 @@ export default function App() {
   };
   const handleMouseLeave = () => setRotation({ x: 0, y: 0 });
 
-  // Use refs to track recording state and functions
   const recordingRef = React.useRef(recording);
-  
   useEffect(() => {
     recordingRef.current = recording;
   }, [recording]);
 
-  // --- Wake word detection callback ---
   const handleWakeWord = useCallback(() => {
     console.log("🎤 WAKE WORD DETECTED!");
     const now = new Date().toLocaleTimeString();
     setLastDetection(now);
     setDetectionCount((prev) => prev + 1);
 
-    // Subtle background flash to show detection
     document.body.style.backgroundColor = "rgba(0,255,0,0.1)";
     setTimeout(() => {
       document.body.style.backgroundColor = "";
     }, 200);
 
-    // Automatically start recording when wake word is detected
     if (!recordingRef.current) {
       console.log("🎙️ Auto-starting recording after wake word...");
       startRecording();
@@ -58,15 +51,13 @@ export default function App() {
     }
   }, [startRecording]);
 
-  // --- Wake word hook (only active on main screen) ---
   const shouldListen = phase === "main";
   const status = useWakeWord(
-    shouldListen ? import.meta.env.VITE_PORCUPINE_KEY : null, 
+    shouldListen ? import.meta.env.VITE_PORCUPINE_KEY : null,
     handleWakeWord
   );
   useEffect(() => setMicStatus(status), [status]);
 
-  // --- Intro typewriter ---
   useEffect(() => {
     if (phase !== "intro") return;
     let i = 0;
@@ -82,7 +73,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [phase]);
 
-  // --- Welcome typing animation ---
   useEffect(() => {
     if (phase !== "welcome") return;
     let i = 0;
@@ -98,7 +88,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [phase]);
 
-  // --- Auto-send transcription to backend ---
   useEffect(() => {
     if (transcribedText) {
       console.log("📤 Sending transcribed text to backend:", transcribedText);
@@ -110,29 +99,20 @@ export default function App() {
     }
   }, [transcribedText]);
 
-
-  // --- Submit typed command ---
   const handleTextSubmit = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
-
     try {
       const response = await fetch("http://localhost:8000/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command: query }),
       });
-
       const data = await response.json();
-      if (data.status === "queued") {
-        console.log("✅ Sent to backend:", data.command);
-      } else {
-        console.error("❌ Backend error:", data.error || "Unknown");
-      }
+      if (data.status === "queued") console.log("✅ Sent:", data.command);
     } catch (err) {
       console.error("⚠️ Failed to send command:", err);
     }
-
     setQuery("");
   };
 
@@ -142,7 +122,7 @@ export default function App() {
       {phase === "intro" && (
         <motion.div
           key="intro"
-          className="h-screen w-screen flex items-center justify-center text-white bg-gradient-to-br from-[#0a0a0f] via-[#161630] to-[#2a0f55] font-[Plus_Jakarta_Sans] text-3xl sm:text-5xl"
+          className="h-screen w-screen flex items-center justify-center text-white bg-gradient-to-br from-[#0a0a0f] via-[#161630] to-[#2a0f55] font-sans text-3xl sm:text-5xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.05 }}
@@ -170,7 +150,7 @@ export default function App() {
       {phase === "welcome" && (
         <motion.div
           key="welcome"
-          className="h-screen w-screen flex items-center justify-center text-white bg-gradient-to-br from-[#0a0a0f] via-[#161630] to-[#2a0f55] font-[Plus_Jakarta_Sans] text-3xl sm:text-5xl"
+          className="h-screen w-screen flex items-center justify-center text-white bg-gradient-to-br from-[#0a0a0f] via-[#161630] to-[#2a0f55] font-sans text-3xl sm:text-5xl"
           initial={{ opacity: 0, scale: 1.1 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
@@ -190,13 +170,13 @@ export default function App() {
           transition={{ duration: 0.8, ease: "easeInOut" }}
         >
           <div
-            className="relative h-screen w-screen flex items-center justify-center text-white font-[Plus_Jakarta_Sans] overflow-hidden"
+            className="relative h-screen w-screen flex items-center justify-center text-white font-sans overflow-hidden"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
           >
             <div className="liquid-bg"></div>
 
-            {/* --- Mic indicator (only show when active) --- */}
+            {/* --- Mic indicator --- */}
             {micStatus !== "inactive" && (
               <div
                 className="absolute top-8 right-8 flex items-center gap-3 px-5 py-2.5 rounded-2xl border border-white/20 backdrop-blur-xl z-20"
@@ -220,8 +200,11 @@ export default function App() {
                       : "bg-yellow-500"
                   }`}
                 ></div>
-                <span className="text-sm sm:text-base font-medium text-white/90">
-                  🎤{" "}
+
+                {/* --- Animated Text --- */}
+                <span
+                  className="text-sm sm:text-base font-semibold bg-gradient-to-r from-[#8cffb1] via-[#4ee6ff] to-[#ff7ce0] bg-[length:200%_200%] text-transparent bg-clip-text animate-gradientFlow"
+                >
                   {micStatus === "active"
                     ? "Listening active"
                     : micStatus === "error"
@@ -240,15 +223,15 @@ export default function App() {
               className="relative z-10 w-[90%] max-w-2xl p-14 rounded-3xl border border-white/20 backdrop-blur-2xl text-center space-y-10 transition-transform duration-300 ease-out"
               style={{
                 transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.01)`,
-                transition: "transform 0.4s ease-out, box-shadow 0.4s ease-out",
                 background:
                   "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
                 boxShadow:
                   "0 15px 45px rgba(0,0,0,0.45), inset 0 0 25px rgba(255,255,255,0.05)",
               }}
             >
-              <h1 className="text-[6rem] sm:text-[7rem] font-extrabold tracking-[0.25em] text-white/95 drop-shadow-[0_0_10px_rgba(255,255,255,0.25)] -mt-6">
-                ZED
+              <h1 className="text-[6rem] sm:text-[7rem] font-extrabold tracking-[0.18em] text-white/95 drop-shadow-[0_0_15px_rgba(255,255,255,0.25)] -mt-6">
+                <span className="text-[#ff6b6b]">ZED</span>
+                <span className="text-white/90">.AI</span>
               </h1>
 
               <p className="text-lg text-gray-200 leading-relaxed max-w-lg mx-auto">
@@ -262,35 +245,27 @@ export default function App() {
                 </span>
               </p>
 
-              {/* Recording Status Indicator */}
-              {recording && (
-                <div className="flex items-center justify-center gap-3 text-red-400 animate-pulse">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                  <span className="font-semibold text-lg">
-                    🎙️ Recording... (stops after 2s of silence)
-                  </span>
-                </div>
-              )}
+              <div className="flex justify-center gap-6">
+                <button
+                  onClick={() => setShowInput(!showInput)}
+                  className="px-8 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-medium hover:bg-white/20 transition-all backdrop-blur-md"
+                >
+                  Click to Type
+                </button>
 
-              {/* Transcribing Status Indicator */}
-              {isTranscribing && (
-                <div className="flex items-center justify-center gap-3 text-blue-400">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span className="font-semibold text-lg">
-                    🧠 Transcribing with ElevenLabs...
-                  </span>
-                </div>
-              )}
+                <button
+                  onMouseDown={startRecording}
+                  onMouseUp={stopRecording}
+                  className={`px-8 py-3 rounded-xl font-medium border border-white/20 backdrop-blur-md transition-all ${
+                    recording
+                      ? "bg-red-500/30 text-red-300"
+                      : "bg-white/10 text-white hover:bg-white/20"
+                  }`}
+                >
+                  {recording ? "Recording..." : "Hold to Speak"}
+                </button>
+              </div>
 
-              {/* Click to Type */}
-              <button
-                onClick={() => setShowInput(!showInput)}
-                className="px-8 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-medium hover:bg-white/20 transition-all backdrop-blur-md"
-              >
-                Click to Type
-              </button>
-
-              {/* Animated Input */}
               <AnimatePresence>
                 {showInput && (
                   <motion.form
@@ -312,19 +287,6 @@ export default function App() {
                 )}
               </AnimatePresence>
 
-              {/* Hold to Speak Button */}
-              <button
-                onMouseDown={startRecording}
-                onMouseUp={stopRecording}
-                className={`px-8 py-3 rounded-xl font-medium border border-white/20 backdrop-blur-md transition-all ${
-                  recording
-                    ? "bg-red-500/30 text-red-300"
-                    : "bg-white/10 text-white hover:bg-white/20"
-                }`}
-              >
-                {recording ? "🎙️ Recording..." : "Hold to Speak"}
-              </button>
-
               {transcribedText && (
                 <p className="text-gray-300 mt-4 text-sm italic">
                   You said: “{transcribedText}”
@@ -334,6 +296,23 @@ export default function App() {
           </div>
         </motion.div>
       )}
+
+      {/* --- Floating ZED logo --- */}
+      <div
+        className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full backdrop-blur-xl border border-white/20 bg-white/10 floating-logo"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
+          boxShadow:
+            "0 8px 25px rgba(0,0,0,0.3), inset 0 0 25px rgba(255,255,255,0.05)",
+        }}
+      >
+        <img
+          src="/zed.png"
+          alt="ZED Logo"
+          className="w-8 h-8 object-contain opacity-90 hover:opacity-100 transition-opacity duration-300"
+        />
+      </div>
     </AnimatePresence>
   );
 }
