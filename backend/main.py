@@ -363,10 +363,10 @@ def generate_content_with_retries(client, max_attempts: int = 5, **kwargs):
             raise
 
 # Specify predefined functions to exclude (optional)
-excluded_functions = ["drag_and_drop"]
+excluded_functions = []
 
 generate_content_config = genai.types.GenerateContentConfig(
-    tools=[
+    tools=[ # type: ignore
         types.Tool(
             computerUse=types.ComputerUse( # type: ignore
                 environment=types.Environment.ENVIRONMENT_BROWSER,
@@ -400,6 +400,8 @@ class AgentRunner:
         self.contents: list[Content] = []
         self.running = False
         self.last_results = []
+        # Short text summary of the most relevant recent update (finish message or errors)
+        self.relevant_update: str | None = None
         self.current_url = ""
         # Goal tracking: allow updates while agent is running and keep history
         self.current_goal: str | None = None
@@ -459,7 +461,12 @@ class AgentRunner:
         try:
             print("Agent thread: initializing Playwright...")
             self.playwright = sync_playwright().start()
-            self.browser = self.playwright.chromium.launch(headless=False)
+            # Allow running headless via environment to support containers/CI.
+            headless_env = os.getenv("HEADLESS", "0")
+            print(f"HEADLESS env var: '{headless_env}'")
+            headless_flag = not (headless_env.lower() in ("0", "false", "no"))
+            print(f"Launching browser with headless={headless_flag}")
+            self.browser = self.playwright.chromium.launch(headless=headless_flag)
             self.context = self.browser.new_context(viewport={"width": self.screen_width, "height": self.screen_height})
             self.page = self.context.new_page()
             try:
@@ -508,9 +515,14 @@ class AgentRunner:
                             config=generate_content_config,
                         )
                     except Exception as e:
-                        print("Error generating content:", e)
-                        time.sleep(1)
-                        continue
+                                err_msg = f"Error generating content: {e}"
+                                print(err_msg)
+                                # publish a concise relevant update for the frontend
+                                with self._lock:
+                                    self.relevant_update = err_msg
+                                    self.update_id += 1
+                                time.sleep(1)
+                                continue
 
                     candidate = response.candidates[0]  # type: ignore
                     # new model candidate arrived
@@ -524,6 +536,10 @@ class AgentRunner:
                     if not has_function_calls:
                         text_response = " ".join([part.text for part in content_parts if part.text])
                         print("Agent finished:", text_response)
+                        # set relevant_update to the finishing text so frontend can surface it
+                        with self._lock:
+                            self.relevant_update = text_response
+                            self.update_id += 1
                         # finished a turn/step
                         with self._lock:
                             self.update_id += 1
@@ -534,9 +550,23 @@ class AgentRunner:
                         candidate, self.page, self.screen_width, self.screen_height
                     )
                     self.last_results = results
+                    # If any function execution returned an error, publish a short relevant_update
+                    try:
+                        for fname, res in results:
+                            if isinstance(res, dict) and res.get("error"):
+                                err_msg = f"Error executing {fname}: {res.get('error')}"
+                                print(err_msg)
+                                with self._lock:
+                                    self.relevant_update = err_msg
+                                    self.update_id += 1
+                                break
+                    except Exception:
+                        pass
                     if terminated:
-                        print("Agent loop terminated by user safety decision.")
+                        term_msg = "Agent loop terminated by user safety decision."
+                        print(term_msg)
                         with self._lock:
+                            self.relevant_update = term_msg
                             self.update_id += 1
                         break
 
@@ -630,6 +660,7 @@ def api_status():
         "current_goal": agent.current_goal,
         "goals_history": agent.goals_history,
         "update_id": agent.update_id,
+        "relevant_update": getattr(agent, 'relevant_update', None),
     })
 
 
@@ -686,12 +717,15 @@ def api_debug():
         'current_goal': agent.current_goal,
         'goals_history': agent.goals_history,
         'update_id': agent.update_id,
+        'relevant_update': getattr(agent, 'relevant_update', None),
     'page_url': (getattr(getattr(agent, 'page', None), 'url', '') if getattr(agent, 'page', None) is not None else ''),
     })
 if __name__ == "__main__":
     try:
         # Run Flask app (development server). For production, use a WSGI server.
-        app.run(host="127.0.0.1", port=8000)
+        # Listen on 0.0.0.0 so the app is reachable from the Docker host when
+        # the container publishes port 8000.
+        app.run(host="0.0.0.0", port=8000)
     finally:
         print("\nClosing browser...")
         try:
