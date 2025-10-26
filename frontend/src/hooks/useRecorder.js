@@ -56,14 +56,19 @@ export function useRecorder() {
         }
         const average = sum / bufferLength;
 
-        // Threshold for silence (adjust as needed)
-        const SILENCE_THRESHOLD = 2;
-        const SILENCE_DURATION = 2000; // 2 seconds of silence
+        // Threshold for silence (higher = more tolerant of background noise)
+        const SILENCE_THRESHOLD = 10; // High threshold to avoid cutting off speech
+        const SILENCE_DURATION = 3000; // 3 seconds of silence to be safe
+
+        // Log volume level occasionally for debugging
+        if (Math.random() < 0.05) { // 5% of the time
+          console.log(`🎚️ Volume level: ${average.toFixed(2)}`);
+        }
 
         if (average < SILENCE_THRESHOLD) {
           if (!silenceStartRef.current) {
             silenceStartRef.current = Date.now();
-            console.log("🔇 Silence detected, starting timer...");
+            console.log(`🔇 Silence detected (${average.toFixed(2)} < ${SILENCE_THRESHOLD}), starting timer...`);
           } else {
             const silenceDuration = Date.now() - silenceStartRef.current;
             if (silenceDuration >= SILENCE_DURATION) {
@@ -78,7 +83,7 @@ export function useRecorder() {
         } else {
           // Reset silence timer if sound detected
           if (silenceStartRef.current) {
-            console.log("🔊 Sound detected, resetting silence timer");
+            console.log(`🔊 Sound detected (${average.toFixed(2)} >= ${SILENCE_THRESHOLD}), resetting silence timer`);
           }
           silenceStartRef.current = null;
         }
