@@ -17,7 +17,7 @@ function createWindow() {
 
   const isDev = process.env.NODE_ENV === "development";
   const devURL = "http://localhost:5173";
-  const prodPath = path.join(__dirname, "../frontend/dist/index.html");
+  const prodPath = path.join(__dirname, "build", "index.html");
 
   if (isDev) {
     win.loadURL(devURL);
