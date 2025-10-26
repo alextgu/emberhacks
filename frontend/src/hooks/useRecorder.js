@@ -56,9 +56,9 @@ export function useRecorder() {
         }
         const average = sum / bufferLength;
 
-        // Threshold for silence (higher = more tolerant of background noise)
-        const SILENCE_THRESHOLD = 10; // High threshold to avoid cutting off speech
-        const SILENCE_DURATION = 3000; // 3 seconds of silence to be safe
+        // Threshold for silence (lower = only true silence, not pauses in speech)
+        const SILENCE_THRESHOLD = 0.5; // Extremely low = only when you stop completely
+        const SILENCE_DURATION = 2000; // 2 seconds of complete silence
 
         // Log volume level occasionally for debugging
         if (Math.random() < 0.05) { // 5% of the time

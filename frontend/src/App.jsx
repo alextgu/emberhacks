@@ -24,6 +24,37 @@ export default function App() {
   // --- Text-to-speech hook ---
   const { speak, stop: stopSpeech, isPlaying } = useTextToSpeech();
 
+  // --- Debug function for testing transcription ---
+  React.useEffect(() => {
+    // Expose test function to window for console access
+    window.testTranscription = async (testText) => {
+      console.log("🧪 Testing transcription with:", testText);
+      
+      // Simulate receiving transcription
+      const response = await fetch("http://localhost:8000/text_to_speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: testText }),
+      });
+      
+      if (response.ok) {
+        console.log("✅ Backend is working!");
+        const audioBlob = await response.blob();
+        const audio = new Audio(URL.createObjectURL(audioBlob));
+        audio.play();
+        console.log("🔊 Playing test audio");
+      } else {
+        console.error("❌ Backend test failed");
+      }
+    };
+
+    // Expose function to check current transcription
+    window.getTranscription = () => {
+      console.log("📝 Current transcription:", transcribedText || "(none)");
+      return transcribedText;
+    };
+  }, [transcribedText]);
+
   const handleMouseMove = (e) => {
     const x = (window.innerHeight / 2 - e.clientY) / 200;
     const y = (e.clientX - window.innerWidth / 2) / 200;
@@ -291,10 +322,12 @@ export default function App() {
                 )}
               </AnimatePresence>
 
+              {/* Transcription Result */}
               {transcribedText && (
-                <p className="text-gray-300 mt-4 text-sm italic">
-                  You said: "{transcribedText}"
-                </p>
+                <div className="mt-6 p-4 bg-green-500/20 border border-green-400/30 rounded-xl backdrop-blur-md">
+                  <p className="text-green-300 font-semibold mb-1">✅ Transcription:</p>
+                  <p className="text-white text-lg">"{transcribedText}"</p>
+                </div>
               )}
 
               {/* Test TTS Button */}
