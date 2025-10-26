@@ -5,3 +5,40 @@
 body {
   @apply bg-gradient-to-br from-indigo-700 via-purple-700 to-pink-600 text-white flex items-center justify-center min-h-screen;
 }
+
+
+body {
+  @apply text-white;
+}
+
+/* Custom Animations */
+@keyframes slow-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-slow-spin {
+  animation: slow-spin 60s linear infinite;
+}
+
+.animate-slow-spin.reverse {
+  animation-direction: reverse;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 1.5s ease-out forwards;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 25px rgba(168,85,247,0.6); }
+  50% { box-shadow: 0 0 50px rgba(236,72,153,0.9); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
