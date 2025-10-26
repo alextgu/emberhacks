@@ -1,6 +1,8 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, session } = require("electron");
 const path = require("path");
 const fs = require("fs");
+
+app.commandLine.appendSwitch("enable-media-stream");
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -12,6 +14,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      webSecurity: false,
     },
   });
 
@@ -29,7 +32,18 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === "media" || permission === "microphone") {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
+
+  createWindow();
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });

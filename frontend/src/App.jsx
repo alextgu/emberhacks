@@ -1,7 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useWakeWord } from "./hooks/useWakeWord"; // adjust path if needed
 
 export default function App() {
   const [textQuery, setTextQuery] = useState("");
+
+  // Callback when wake word is detected
+  const handleWakeWord = () => {
+    console.log("✅ Wake word detected! You can focus input or trigger voice commands.");
+    // Example: focus the input field
+    const input = document.querySelector("input");
+    if (input) input.focus();
+  };
+
+  // Initialize Porcupine wake word - call hook at top level
+  const key = import.meta.env.VITE_PORCUPINE_KEY;
+  
+  useEffect(() => {
+    console.log("🟢 App mounted, initializing wake word...");
+    if (!key) {
+      console.error("❌ Porcupine key not found!");
+    }
+  }, [key]);
+
+  // Call the hook at the top level (not inside useEffect)
+  useWakeWord(key, handleWakeWord);
 
   return (
     <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#161630] to-[#2a0f55] text-white font-[Poppins] overflow-hidden">
