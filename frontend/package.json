@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.8.0",
+    "@google/genai": "^1.27.0",
     "@picovoice/porcupine-web": "^3.0.3",
     "emberhacks-root": "file:..",
     "framer-motion": "^12.23.24",

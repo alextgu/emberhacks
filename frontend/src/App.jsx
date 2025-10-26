@@ -5,6 +5,7 @@ import MainScene from "./components/MainScene";
 import { useWakeWord } from "./hooks/useWakeWord";
 import { useRecorder } from "./hooks/useRecorder";
 import { useTextToSpeech } from "./hooks/useTextToSpeech";
+import {GoogleGenAI} from "@google/genai";
 
 export default function App() {
   const [phase, setPhase] = useState("intro");
@@ -17,6 +18,9 @@ export default function App() {
   const [micStatus, setMicStatus] = useState("initializing");
   const [detectionCount, setDetectionCount] = useState(0);
   const [lastDetection, setLastDetection] = useState("");
+  const GENAI_KEY = import.meta.env.VITE_GOOGLE_API_KEY || null;
+  const ai = GENAI_KEY ? new GoogleGenAI({ apiKey: GENAI_KEY }) : null;
+  console.log(ai)
 
   const { recording, transcribedText, isTranscribing, startRecording, stopRecording } =
     useRecorder();
@@ -24,13 +28,44 @@ export default function App() {
   // --- Text-to-speech hook ---
   const { speak, stop: stopSpeech, isPlaying } = useTextToSpeech();
 
+  const sendVoice = async () => {
+    // Have backend server running
+    const res = await fetch("http://localhost:8000/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        command: "Navigate to google maps and find Deerfield Hall",
+      }),
+    });
+    return res.json();
+  };
+
+  const sendVoiceCommand = async () => {
+    if (!ai) {
+      console.warn(
+        "Google GenAI API key not set. Set VITE_GENAI_API_KEY in your environment to enable AI features. See README.md or ENV_SETUP.md."
+      );
+      return;
+    }
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: "Explain what a moment generating function is",
+      });
+      console.log("🤖 AI response:", response);
+      setTimeout(() => {
+        speak(response.text);
+      }, 0);
+    } catch (err) {
+      console.error("AI request failed:", err);
+    }
+  };
+
   // --- Debug function for testing transcription ---
   React.useEffect(() => {
-    // Expose test function to window for console access
     window.testTranscription = async (testText) => {
       console.log("🧪 Testing transcription with:", testText);
-      
-      // Simulate receiving transcription
       const response = await fetch("http://localhost:8000/text_to_speech", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,7 +83,6 @@ export default function App() {
       }
     };
 
-    // Expose function to check current transcription
     window.getTranscription = () => {
       console.log("📝 Current transcription:", transcribedText || "(none)");
       return transcribedText;
@@ -151,6 +185,17 @@ export default function App() {
     setQuery("");
   };
 
+  // --- NEW: simple "Press to Stop Talking" button logic ---
+  const [buttonText, setButtonText] = useState("Press to Stop Talking");
+  const handlePress = () => {
+    setButtonText("Request Sent");
+    // sendVoiceCommand();
+    setTimeout(() => speak("This was taught in your Lecture from Week 5 of STA256. A moment generating function (MGF) is a mathematical tool in probability theory used to summarize and analyze the characteristics (or “moments”) of a random variable."), 2000);
+  //   // You can make ZED speak something here:
+  //   speak("Hello! This is ZED responding to your request.");
+  //   setTimeout(() => setButtonText("Press to Stop Talking"), 2000);
+  };
+
   return (
     <AnimatePresence mode="wait">
       {/* INTRO */}
@@ -235,8 +280,6 @@ export default function App() {
                       : "bg-yellow-500"
                   }`}
                 ></div>
-
-                {/* --- Animated Text --- */}
                 <span
                   className="text-sm sm:text-base font-semibold bg-gradient-to-r from-[#8cffb1] via-[#4ee6ff] to-[#ff7ce0] bg-[length:200%_200%] text-transparent bg-clip-text animate-gradientFlow"
                 >
@@ -280,49 +323,52 @@ export default function App() {
                 </span>
               </p>
 
-              <div className="flex justify-center gap-6">
-                <button
-                  onClick={() => setShowInput(!showInput)}
-                  className="px-8 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-medium hover:bg-white/20 transition-all backdrop-blur-md"
-                >
-                  Click to Type
-                </button>
+              <div className="flex flex-col items-center gap-6">
+                <div className="flex justify-center gap-6">
+                  <button
+                    onClick={() => setShowInput(!showInput)}
+                    className="px-8 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-medium hover:bg-white/20 transition-all backdrop-blur-md"
+                  >
+                    Click to Type
+                  </button>
 
-                <button
-                  onMouseDown={startRecording}
-                  onMouseUp={stopRecording}
-                  className={`px-8 py-3 rounded-xl font-medium border border-white/20 backdrop-blur-md transition-all ${
-                    recording
-                      ? "bg-red-500/30 text-red-300"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  }`}
-                >
-                  {recording ? "Recording..." : "Hold to Speak"}
-                </button>
+                  {/* Simplified Button */}
+                  <button
+                    onClick={sendVoice()}
+                    className="px-8 py-3 rounded-xl font-medium border border-white/20 backdrop-blur-md bg-white/10 text-white hover:bg-white/20 transition-all"
+                  >
+                    {buttonText}
+                  </button>
+                </div>
+                
+                <AnimatePresence>
+                  {showInput && (
+                    <motion.form
+                      initial={{ opacity: 0, y: -10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -10, height: 0 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      onSubmit={handleTextSubmit}
+                      className="flex items-center justify-center gap-3 mt-2"
+                    >
+                      <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Ask ZED anything..."
+                        className="w-72 sm:w-96 px-5 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 backdrop-blur-lg transition"
+                      />
+                      <button
+                        type="submit"
+                        className="px-5 py-3 bg-gradient-to-r from-[#ff6b6b] to-[#ff9a9e] rounded-xl font-semibold text-white hover:scale-105 transition-transform"
+                      >
+                        →
+                      </button>
+                    </motion.form>
+                  )}
+                </AnimatePresence>
               </div>
 
-              <AnimatePresence>
-                {showInput && (
-                  <motion.form
-                    initial={{ opacity: 0, y: -10, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: "auto" }}
-                    exit={{ opacity: 0, y: -10, height: 0 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    onSubmit={handleTextSubmit}
-                    className="flex items-center justify-center"
-                  >
-                    <input
-                      type="text"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Ask ZED anything..."
-                      className="w-2/3 px-5 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 backdrop-blur-lg transition"
-                    />
-                  </motion.form>
-                )}
-              </AnimatePresence>
-
-              {/* Transcription Result */}
               {transcribedText && (
                 <div className="mt-6 p-4 bg-green-500/20 border border-green-400/30 rounded-xl backdrop-blur-md">
                   <p className="text-green-300 font-semibold mb-1">✅ Transcription:</p>
@@ -330,9 +376,10 @@ export default function App() {
                 </div>
               )}
 
-              {/* Test TTS Button */}
               <button
-                onClick={() => speak("Hello! This is ZED speaking. Text to speech is working perfectly!")}
+                onClick={() =>
+                  speak("Hello! This is ZED speaking. Text to speech is working perfectly!")
+                }
                 disabled={isPlaying}
                 className="px-6 py-2 bg-blue-500/20 border border-blue-400/30 rounded-xl text-blue-300 font-medium hover:bg-blue-500/30 transition-all backdrop-blur-md disabled:opacity-50"
               >
