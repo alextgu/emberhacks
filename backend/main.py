@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 # Load environment variables from a .env file
 load_dotenv()
-from google import genai
+import google.generativeai as genai
 from elevenlabs_utils import transcribe_audio_file
 from flask import Flask, request, jsonify
 from agent_runner import AgentRunner

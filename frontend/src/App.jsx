@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import LoginScene from "./components/LoginScene";
 import MainScene from "./components/MainScene";
 import { useWakeWord } from "./hooks/useWakeWord";
+import { useRecorder } from "./hooks/useRecorder";
 
 export default function App() {
   const [phase, setPhase] = useState("intro");
@@ -16,6 +17,9 @@ export default function App() {
   const [micStatus, setMicStatus] = useState("initializing");
   const [detectionCount, setDetectionCount] = useState(0);
   const [lastDetection, setLastDetection] = useState("");
+
+  // --- Recorder hook ---
+  const { recording, transcribedText, startRecording, stopRecording } = useRecorder();
 
   // --- Mouse 3D tilt ---
   const handleMouseMove = (e) => {
@@ -74,6 +78,43 @@ export default function App() {
     }, 55);
     return () => clearInterval(timer);
   }, [phase]);
+
+  // --- Auto-send transcription to backend ---
+  useEffect(() => {
+    if (transcribedText) {
+      console.log("📤 Sending transcribed text to backend:", transcribedText);
+      fetch("http://localhost:8000/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: transcribedText }),
+      }).catch((err) => console.error("⚠️ Failed to send command:", err));
+    }
+  }, [transcribedText]);
+
+  // --- Submit typed command ---
+  const handleTextSubmit = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+
+    try {
+      const response = await fetch("http://localhost:8000/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: query }),
+      });
+
+      const data = await response.json();
+      if (data.status === "queued") {
+        console.log("✅ Sent to backend:", data.command);
+      } else {
+        console.error("❌ Backend error:", data.error || "Unknown");
+      }
+    } catch (err) {
+      console.error("⚠️ Failed to send command:", err);
+    }
+
+    setQuery("");
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -172,16 +213,6 @@ export default function App() {
               </span>
             </div>
 
-            {/* --- Detection badge --- */}
-            {detectionCount > 0 && (
-              <div className="absolute top-24 right-8 px-6 py-3 bg-green-500/90 backdrop-blur-md rounded-xl border-2 border-green-300 animate-bounce z-20">
-                <div className="text-white font-bold text-lg">
-                  🎉 Detected: {detectionCount}x
-                </div>
-                <div className="text-white/80 text-xs">Last: {lastDetection}</div>
-              </div>
-            )}
-
             {/* --- Main Glass --- */}
             <div
               className="relative z-10 w-[90%] max-w-2xl p-14 rounded-3xl border border-white/20 backdrop-blur-2xl text-center space-y-10 transition-transform duration-300 ease-out"
@@ -194,19 +225,6 @@ export default function App() {
                   "0 15px 45px rgba(0,0,0,0.45), inset 0 0 25px rgba(255,255,255,0.05)",
               }}
             >
-              {/* Reflection */}
-              <div
-                className="absolute inset-0 rounded-3xl pointer-events-none"
-                style={{
-                  background: `radial-gradient(circle at ${
-                    50 + rotation.y * 1.5
-                  }% ${50 - rotation.x * 1.5}%, rgba(255,255,255,0.08), transparent 60%)`,
-                  mixBlendMode: "overlay",
-                  transition: "background 0.4s ease-out",
-                }}
-              ></div>
-
-              {/* Title */}
               <h1 className="text-[6rem] sm:text-[7rem] font-extrabold tracking-[0.25em] text-white/95 drop-shadow-[0_0_10px_rgba(255,255,255,0.25)] -mt-6">
                 ZED
               </h1>
@@ -238,11 +256,7 @@ export default function App() {
                     animate={{ opacity: 1, y: 0, height: "auto" }}
                     exit={{ opacity: 0, y: -10, height: 0 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      console.log("User asked:", query);
-                      setQuery("");
-                    }}
+                    onSubmit={handleTextSubmit}
                     className="flex items-center justify-center"
                   >
                     <input
@@ -255,6 +269,25 @@ export default function App() {
                   </motion.form>
                 )}
               </AnimatePresence>
+
+              {/* Hold to Speak Button */}
+              <button
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                className={`px-8 py-3 rounded-xl font-medium border border-white/20 backdrop-blur-md transition-all ${
+                  recording
+                    ? "bg-red-500/30 text-red-300"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+              >
+                {recording ? "🎙️ Recording..." : "Hold to Speak"}
+              </button>
+
+              {transcribedText && (
+                <p className="text-gray-300 mt-4 text-sm italic">
+                  You said: “{transcribedText}”
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
