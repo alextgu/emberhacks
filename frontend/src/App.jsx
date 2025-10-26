@@ -13,13 +13,13 @@ export default function App() {
     console.log("✅✅✅ WAKE WORD DETECTED IN APP! ✅✅✅");
     const now = new Date().toLocaleTimeString();
     setLastDetection(now);
-    setDetectionCount(prev => prev + 1);
-    
+    setDetectionCount((prev) => prev + 1);
+
     document.body.style.backgroundColor = "#00ff00";
     setTimeout(() => {
       document.body.style.backgroundColor = "";
     }, 200);
-    
+
     const input = document.querySelector("input");
     if (input) {
       input.focus();
@@ -56,23 +56,36 @@ export default function App() {
       <div
         className="absolute top-8 right-8 flex items-center gap-3 px-5 py-2.5 rounded-2xl border border-white/20 backdrop-blur-xl z-20"
         style={{
-          background: "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
-          boxShadow: "0 8px 25px rgba(0,0,0,0.4), inset 0 0 25px rgba(255,255,255,0.08)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
+          boxShadow:
+            "0 8px 25px rgba(0,0,0,0.4), inset 0 0 25px rgba(255,255,255,0.08)",
         }}
       >
         <div
           className={`w-3.5 h-3.5 rounded-full ${
-            micStatus === "active" ? "bg-green-500" : micStatus === "error" ? "bg-red-500" : "bg-yellow-500"
+            micStatus === "active"
+              ? "bg-green-500"
+              : micStatus === "error"
+              ? "bg-red-500"
+              : "bg-yellow-500"
           }`}
         ></div>
         <span className="flex items-center gap-2 text-sm sm:text-base font-medium text-white/90">
-          🎤 {micStatus === "active" ? "Listening active" : micStatus === "error" ? "Mic Error" : "Initializing..."}
+          🎤{" "}
+          {micStatus === "active"
+            ? "Listening active"
+            : micStatus === "error"
+            ? "Mic Error"
+            : "Initializing..."}
         </span>
       </div>
 
       {detectionCount > 0 && (
         <div className="absolute top-24 right-8 px-6 py-3 bg-green-500/90 backdrop-blur-md rounded-xl border-2 border-green-300 animate-bounce z-20">
-          <div className="text-white font-bold text-lg">🎉 Detected: {detectionCount}x</div>
+          <div className="text-white font-bold text-lg">
+            🎉 Detected: {detectionCount}x
+          </div>
           <div className="text-white/80 text-xs">Last: {lastDetection}</div>
         </div>
       )}
@@ -81,14 +94,18 @@ export default function App() {
         className="relative z-10 w-[90%] max-w-2xl p-14 rounded-3xl border border-white/20 backdrop-blur-2xl text-center space-y-10 transition-transform duration-300 ease-out"
         style={{
           transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.02)`,
-          background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.5), inset 0 0 40px rgba(255,255,255,0.05)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
+          boxShadow:
+            "0 20px 60px rgba(0,0,0,0.5), inset 0 0 40px rgba(255,255,255,0.05)",
         }}
       >
         <div
           className="absolute inset-0 rounded-3xl pointer-events-none"
           style={{
-            background: `radial-gradient(circle at ${50 + rotation.y * 3}% ${50 - rotation.x * 3}%, rgba(255,255,255,0.15), transparent 60%)`,
+            background: `radial-gradient(circle at ${50 + rotation.y * 3}% ${
+              50 - rotation.x * 3
+            }%, rgba(255,255,255,0.15), transparent 60%)`,
             mixBlendMode: "overlay",
           }}
         ></div>
@@ -103,7 +120,8 @@ export default function App() {
           anticipate your needs with intuitive intelligence.
           <br />
           <span className="text-gray-200">
-            Say <span className="text-[#ff6b6b] font-semibold">"Hey ZED"</span> to get your conversation started.
+            Say <span className="text-[#ff6b6b] font-semibold">"Hey ZED"</span>{" "}
+            to get your conversation started.
           </span>
         </p>
 
@@ -121,7 +139,10 @@ export default function App() {
             showInput ? "max-h-32 opacity-100 mt-6" : "max-h-0 opacity-0"
           }`}
         >
-          <form onSubmit={handleInputSubmit} className="flex items-center justify-center">
+          <form
+            onSubmit={handleInputSubmit}
+            className="flex items-center justify-center"
+          >
             <input
               type="text"
               value={query}
