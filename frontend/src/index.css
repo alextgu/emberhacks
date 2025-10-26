@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gradient-to-br from-indigo-700 via-purple-700 to-pink-600 text-white flex items-center justify-center min-h-screen;
+}
