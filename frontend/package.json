@@ -12,8 +12,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.8.0",
     "@picovoice/porcupine-web": "^3.0.3",
     "emberhacks-root": "file:..",
+    "framer-motion": "^12.23.24",
     "gsap": "^3.13.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
