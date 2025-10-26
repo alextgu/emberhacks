@@ -4,6 +4,7 @@ import LoginScene from "./components/LoginScene";
 import MainScene from "./components/MainScene";
 import { useWakeWord } from "./hooks/useWakeWord";
 import { useRecorder } from "./hooks/useRecorder";
+import { useTextToSpeech } from "./hooks/useTextToSpeech";
 
 export default function App() {
   const [phase, setPhase] = useState("intro");
@@ -19,6 +20,9 @@ export default function App() {
 
   const { recording, transcribedText, isTranscribing, startRecording, stopRecording } =
     useRecorder();
+  
+  // --- Text-to-speech hook ---
+  const { speak, stop: stopSpeech, isPlaying } = useTextToSpeech();
 
   const handleMouseMove = (e) => {
     const x = (window.innerHeight / 2 - e.clientY) / 200;
@@ -289,9 +293,18 @@ export default function App() {
 
               {transcribedText && (
                 <p className="text-gray-300 mt-4 text-sm italic">
-                  You said: “{transcribedText}”
+                  You said: "{transcribedText}"
                 </p>
               )}
+
+              {/* Test TTS Button */}
+              <button
+                onClick={() => speak("Hello! This is ZED speaking. Text to speech is working perfectly!")}
+                disabled={isPlaying}
+                className="px-6 py-2 bg-blue-500/20 border border-blue-400/30 rounded-xl text-blue-300 font-medium hover:bg-blue-500/30 transition-all backdrop-blur-md disabled:opacity-50"
+              >
+                {isPlaying ? "🔊 Speaking..." : "🎵 Test Voice"}
+              </button>
             </div>
           </div>
         </motion.div>
