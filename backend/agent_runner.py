@@ -1,10 +1,6 @@
 import os 
-<<<<<<< HEAD
 import sys
 from pathlib import Path
-=======
-# .\venv\Scripts\python.exe .\backend\main.py
->>>>>>> a6a9a621c769f20d39d7ab13261796b18130cf92
 from dotenv import load_dotenv
 
 # Load environment variables from project root

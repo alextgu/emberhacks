@@ -12,7 +12,8 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path=env_path)
 import google.generativeai as genai
 from elevenlabs_utils import transcribe_audio_file
-from flask import Flask, request, jsonify
+from elevenlabs_tts import text_to_speech, text_to_speech_stream
+from flask import Flask, request, jsonify, Response
 from agent_runner import AgentRunner
 
 # Initialize genai from environment to avoid embedding secrets in code.
@@ -169,6 +170,58 @@ def api_debug():
         'relevant_update': getattr(agent, 'relevant_update', None),
     'page_url': (getattr(getattr(agent, 'page', None), 'url', '') if getattr(agent, 'page', None) is not None else ''),
     })
+
+
+@app.route('/text_to_speech', methods=['POST'])
+def api_text_to_speech():
+    """Convert text to speech using ElevenLabs and return audio"""
+    payload = request.get_json() or {}
+    text = payload.get('text')
+    voice_id = payload.get('voice_id', 'JBFqnCBsd6RMkjVDRZzb')  # Default: George
+    
+    if not text:
+        return jsonify({"error": "missing text"}), 400
+    
+    # Generate audio
+    audio_bytes = text_to_speech(text, voice_id)
+    
+    if not audio_bytes:
+        return jsonify({"error": "Failed to generate audio"}), 500
+    
+    # Return audio as MP3
+    return Response(
+        audio_bytes,
+        mimetype='audio/mpeg',
+        headers={
+            'Content-Disposition': 'inline; filename="speech.mp3"',
+            'Content-Type': 'audio/mpeg'
+        }
+    )
+
+
+@app.route('/text_to_speech_stream', methods=['POST'])
+def api_text_to_speech_stream():
+    """Stream text-to-speech audio"""
+    payload = request.get_json() or {}
+    text = payload.get('text')
+    voice_id = payload.get('voice_id', 'JBFqnCBsd6RMkjVDRZzb')
+    
+    if not text:
+        return jsonify({"error": "missing text"}), 400
+    
+    # Stream audio
+    audio_generator = text_to_speech_stream(text, voice_id)
+    
+    return Response(
+        audio_generator,
+        mimetype='audio/mpeg',
+        headers={
+            'Content-Type': 'audio/mpeg',
+            'Cache-Control': 'no-cache'
+        }
+    )
+
+
 if __name__ == "__main__":
     try:
         # Run Flask app (development server). For production, use a WSGI server.
