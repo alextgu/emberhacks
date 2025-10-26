@@ -1,62 +1,133 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useWakeWord } from "./hooks/useWakeWord"; // adjust path if needed
+import React, { useState } from "react";
+import "./index.css";
 
 export default function App() {
-  const [textQuery, setTextQuery] = useState("");
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [showInput, setShowInput] = useState(false);
+  const [query, setQuery] = useState("");
+  const [micStatus, setMicStatus] = useState("active"); // active | error | initializing
 
-  // Callback when wake word is detected - memoized to prevent re-initialization
-  const handleWakeWord = useCallback(() => {
-    console.log("✅ Wake word detected in App! Focusing input...");
-    // Example: focus the input field
-    const input = document.querySelector("input");
-    if (input) {
-      input.focus();
-      console.log("📝 Input field focused!");
-    }
-  }, []);
+  const handleMouseMove = (e) => {
+    const { innerWidth, innerHeight } = window;
+    const x = ((e.clientY - innerHeight / 2) / innerHeight) * 15;
+    const y = ((e.clientX - innerWidth / 2) / innerWidth) * 15;
+    setRotation({ x, y });
+  };
 
-  // Initialize Porcupine wake word - call hook at top level
-  const key = import.meta.env.VITE_PORCUPINE_KEY;
-  
-  useEffect(() => {
-    console.log("🟢 App mounted, initializing wake word...");
-    if (!key) {
-      console.error("❌ Porcupine key not found!");
-    }
-  }, [key]);
-
-  // Call the hook at the top level (not inside useEffect) and get status
-  const micStatus = useWakeWord(key, handleWakeWord);
+  const handleMouseLeave = () => setRotation({ x: 0, y: 0 });
+  const handleButtonClick = () => setShowInput(!showInput);
+  const handleInputSubmit = (e) => {
+    e.preventDefault();
+    console.log("User asked:", query);
+    setQuery("");
+  };
 
   return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#161630] to-[#2a0f55] text-white font-[Poppins] overflow-hidden">
-      
-      {/* Microphone Status Indicator */}
-      <div className="absolute top-8 right-8 flex items-center gap-3 px-4 py-2 bg-[#1a1a1f]/80 backdrop-blur-md rounded-full border border-[#5f5f80]/30">
-        <div className={`w-3 h-3 rounded-full ${micStatus === 'active' ? 'bg-green-500 animate-pulse' : micStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`}></div>
-        <span className="text-sm text-[#cfd2ff]">
-          {micStatus === 'active' ? '🎤 Listening for "Hey Zed"' : micStatus === 'error' ? '❌ Mic Error' : '⏳ Initializing...'}
+    <div
+      className="relative h-screen w-screen flex items-center justify-center text-white font-[Inter] overflow-hidden"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* ---- Gradient Background ---- */}
+      <div className="liquid-bg"></div>
+
+      {/* ---- Glass Status Bubble ---- */}
+      <div
+        className="absolute top-8 right-8 flex items-center gap-3 px-5 py-2.5 rounded-2xl border border-white/20 backdrop-blur-xl z-20"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
+          boxShadow:
+            "0 8px 25px rgba(0,0,0,0.4), inset 0 0 25px rgba(255,255,255,0.08)",
+        }}
+      >
+        <div
+          className={`w-3.5 h-3.5 rounded-full ${
+            micStatus === "active"
+              ? "bg-green-500"
+              : micStatus === "error"
+              ? "bg-red-500"
+              : "bg-yellow-500"
+          }`}
+        ></div>
+        <span className="flex items-center gap-2 text-sm sm:text-base font-medium text-white/90">
+          🎤{" "}
+          {micStatus === "active"
+            ? "Listening active"
+            : micStatus === "error"
+            ? "Mic Error"
+            : "Initializing..."}
         </span>
       </div>
 
-      {/* ZED Title */}
-      <h1 className="text-8xl font-bold tracking-[0.25em] mb-16 text-[#b3b8ff] drop-shadow-[0_0_25px_#7a5cff] animate-pulse">
-        ZED
-      </h1>
+      {/* ---- Main Glass Container ---- */}
+      <div
+        className="relative z-10 w-[90%] max-w-2xl p-14 rounded-3xl border border-white/20 backdrop-blur-2xl text-center space-y-10 transition-transform duration-300 ease-out"
+        style={{
+          transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.02)`,
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
+          boxShadow:
+            "0 20px 60px rgba(0,0,0,0.5), inset 0 0 40px rgba(255,255,255,0.05)",
+        }}
+      >
+        {/* Inner glass shimmer */}
+        <div
+          className="absolute inset-0 rounded-3xl pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at ${50 + rotation.y * 3}% ${
+              50 - rotation.x * 3
+            }%, rgba(255,255,255,0.15), transparent 60%)`,
+            mixBlendMode: "overlay",
+          }}
+        ></div>
 
-      {/* Input + Voice Button */}
-      <div className="flex flex-col md:flex-row gap-6 w-full max-w-3xl justify-center px-8">
-        <input
-          type="text"
-          value={textQuery}
-          onChange={(e) => setTextQuery(e.target.value)}
-          placeholder="Type your command..."
-          className="flex-1 px-6 py-4 bg-[#1a1a1f] border border-[#5f5f80]/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#7a5cff] text-[#cfd2ff] placeholder-[#8a8ba3] backdrop-blur-md transition-all duration-300"
-        />
+        {/* Title */}
+        <h1 className="text-[6rem] sm:text-[7rem] font-extrabold tracking-[0.25em] text-white/95 drop-shadow-[0_0_10px_rgba(255,255,255,0.25)] -mt-6">
+          ZED
+        </h1>
 
-        <button className="px-8 py-4 bg-[#1a1a1f] border border-[#5f5f80]/30 rounded-2xl text-[#cfd2ff] font-semibold hover:bg-[#29293d] hover:border-[#7a5cff]/60 transition-all duration-300">
-          🎤
-        </button>
+        {/* Description */}
+        <p className="text-lg text-gray-200 leading-relaxed max-w-lg mx-auto">
+          Meet your personal AI assistant — a sophisticated digital companion
+          designed to streamline your workflow, deliver precise insights, and
+          anticipate your needs with intuitive intelligence.
+          <br />
+          <span className="text-gray-200">
+            Say <span className="text-[#ff6b6b] font-semibold">“Hey ZED”</span> to get your conversation started.
+          </span>
+
+        </p>
+
+        {/* Button */}
+        <div className="mt-8">
+          <button
+            onClick={handleButtonClick}
+            className="px-8 py-3 bg-white/10 border border-white/20 rounded-xl text-white font-medium hover:bg-white/20 transition-all backdrop-blur-md"
+          >
+            Click to Type
+          </button>
+        </div>
+
+        {/* Smooth dropdown input */}
+        <div
+          className={`transition-all duration-700 ease-[cubic-bezier(0.25,1,0.3,1)] overflow-hidden ${
+            showInput ? "max-h-32 opacity-100 mt-6" : "max-h-0 opacity-0"
+          }`}
+        >
+          <form
+            onSubmit={handleInputSubmit}
+            className="flex items-center justify-center"
+          >
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ask ZED anything..."
+              className="w-3/4 sm:w-2/3 px-5 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 backdrop-blur-lg transition"
+            />
+          </form>
+        </div>
       </div>
     </div>
   );
