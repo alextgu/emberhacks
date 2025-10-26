@@ -1,28 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
 
 export default function App() {
+  const [textQuery, setTextQuery] = useState("");
+
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-gradient-to-br from-[#09091f] via-[#14142f] to-[#2a0f55] text-white font-[Poppins] perspective-[1000px]">
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#161630] to-[#2a0f55] text-white font-[Poppins] overflow-hidden">
       
-      {/* 3D glowing background orbs */}
-      <div className="absolute w-[1200px] h-[1200px] bg-gradient-to-tr from-purple-500/30 via-pink-500/20 to-indigo-500/30 rounded-full blur-[200px] animate-slow-spin -top-80 -left-80" />
-      <div className="absolute w-[900px] h-[900px] bg-gradient-to-bl from-indigo-400/30 via-purple-400/20 to-pink-400/20 rounded-full blur-[180px] animate-slow-spin reverse bottom-[-400px] right-[-200px]" />
+      {/* ZED Title */}
+      <h1 className="text-8xl font-bold tracking-[0.25em] mb-16 text-[#b3b8ff] drop-shadow-[0_0_25px_#7a5cff] animate-pulse">
+        ZED
+      </h1>
 
-      {/* Main floating glass card */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative z-10 p-10 rounded-3xl bg-white/10 backdrop-blur-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)] transform transition-transform duration-700 hover:rotate-x-6 hover:rotate-y-6 hover:scale-[1.03]">
-          <h1 className="text-6xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent animate-fade-in">
-            ZED Voice Assistant
-          </h1>
-          <p className="mt-4 text-lg opacity-80 animate-fade-in">
-            Your intelligent desktop companion powered by AI 🔥
-          </p>
+      {/* Input + Voice Button */}
+      <div className="flex flex-col md:flex-row gap-6 w-full max-w-3xl justify-center px-8">
+        <input
+          type="text"
+          value={textQuery}
+          onChange={(e) => setTextQuery(e.target.value)}
+          placeholder="Type your command..."
+          className="flex-1 px-6 py-4 bg-[#1a1a1f] border border-[#5f5f80]/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#7a5cff] text-[#cfd2ff] placeholder-[#8a8ba3] backdrop-blur-md transition-all duration-300"
+        />
 
-          {/* Glowing button */}
-          <button className="mt-8 px-8 py-3 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:shadow-[0_0_50px_rgba(236,72,153,0.9)] transition-all duration-300 animate-pulse-glow">
-            Activate ZED
-          </button>
-        </div>
+        <button className="px-8 py-4 bg-[#1a1a1f] border border-[#5f5f80]/30 rounded-2xl text-[#cfd2ff] font-semibold hover:bg-[#29293d] hover:border-[#7a5cff]/60 transition-all duration-300">
+          🎤
+        </button>
       </div>
     </div>
   );

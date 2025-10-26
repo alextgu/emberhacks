@@ -2,43 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gradient-to-br from-indigo-700 via-purple-700 to-pink-600 text-white flex items-center justify-center min-h-screen;
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #e6d7f5, #cce4f6, #f8e3e3);
 }
 
-
-body {
-  @apply text-white;
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
 }
 
-/* Custom Animations */
-@keyframes slow-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-slow-spin {
-  animation: slow-spin 60s linear infinite;
-}
-
-.animate-slow-spin.reverse {
-  animation-direction: reverse;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fade-in 1.5s ease-out forwards;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 25px rgba(168,85,247,0.6); }
-  50% { box-shadow: 0 0 50px rgba(236,72,153,0.9); }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+h1 {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
