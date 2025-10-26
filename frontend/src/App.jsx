@@ -19,7 +19,7 @@ export default function App() {
   const [lastDetection, setLastDetection] = useState("");
 
   // --- Recorder hook ---
-  const { recording, transcribedText, startRecording, stopRecording } = useRecorder();
+  const { recording, transcribedText, isTranscribing, startRecording, stopRecording } = useRecorder();
 
   // --- Mouse 3D tilt ---
   const handleMouseMove = (e) => {
@@ -28,6 +28,13 @@ export default function App() {
     setRotation({ x, y });
   };
   const handleMouseLeave = () => setRotation({ x: 0, y: 0 });
+
+  // Use refs to track recording state and functions
+  const recordingRef = React.useRef(recording);
+  
+  useEffect(() => {
+    recordingRef.current = recording;
+  }, [recording]);
 
   // --- Wake word detection callback ---
   const handleWakeWord = useCallback(() => {
@@ -41,10 +48,22 @@ export default function App() {
     setTimeout(() => {
       document.body.style.backgroundColor = "";
     }, 200);
-  }, []);
 
-  // --- Wake word hook ---
-  const status = useWakeWord(import.meta.env.VITE_PORCUPINE_KEY, handleWakeWord);
+    // Automatically start recording when wake word is detected
+    if (!recordingRef.current) {
+      console.log("🎙️ Auto-starting recording after wake word...");
+      startRecording();
+    } else {
+      console.log("⚠️ Already recording, ignoring wake word");
+    }
+  }, [startRecording]);
+
+  // --- Wake word hook (only active on main screen) ---
+  const shouldListen = phase === "main";
+  const status = useWakeWord(
+    shouldListen ? import.meta.env.VITE_PORCUPINE_KEY : null, 
+    handleWakeWord
+  );
   useEffect(() => setMicStatus(status), [status]);
 
   // --- Intro typewriter ---
@@ -90,6 +109,7 @@ export default function App() {
       }).catch((err) => console.error("⚠️ Failed to send command:", err));
     }
   }, [transcribedText]);
+
 
   // --- Submit typed command ---
   const handleTextSubmit = async (e) => {
@@ -176,42 +196,44 @@ export default function App() {
           >
             <div className="liquid-bg"></div>
 
-            {/* --- Mic indicator --- */}
-            <div
-              className="absolute top-8 right-8 flex items-center gap-3 px-5 py-2.5 rounded-2xl border border-white/20 backdrop-blur-xl z-20"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
-                boxShadow:
-                  "0 8px 25px rgba(0,0,0,0.4), inset 0 0 25px rgba(255,255,255,0.08)",
-              }}
-            >
+            {/* --- Mic indicator (only show when active) --- */}
+            {micStatus !== "inactive" && (
               <div
-                className={`w-3.5 h-3.5 rounded-full transition-all duration-500 ${
-                  micStatus === "active"
-                    ? "bg-green-500 shadow-[0_0_8px_2px_rgba(34,197,94,0.7)] animate-pulse"
+                className="absolute top-8 right-8 flex items-center gap-3 px-5 py-2.5 rounded-2xl border border-white/20 backdrop-blur-xl z-20"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
+                  boxShadow:
+                    "0 8px 25px rgba(0,0,0,0.4), inset 0 0 25px rgba(255,255,255,0.08)",
+                }}
+              >
+                <div
+                  className={`w-3.5 h-3.5 rounded-full transition-all duration-500 ${
+                    micStatus === "active"
+                      ? "bg-green-500 shadow-[0_0_8px_2px_rgba(34,197,94,0.7)] animate-pulse"
+                      : micStatus === "error"
+                      ? "bg-red-500"
+                      : micStatus === "loading_model"
+                      ? "bg-purple-500"
+                      : micStatus === "requesting_mic"
+                      ? "bg-orange-400"
+                      : "bg-yellow-500"
+                  }`}
+                ></div>
+                <span className="text-sm sm:text-base font-medium text-white/90">
+                  🎤{" "}
+                  {micStatus === "active"
+                    ? "Listening active"
                     : micStatus === "error"
-                    ? "bg-red-500"
+                    ? "Mic Error"
                     : micStatus === "loading_model"
-                    ? "bg-purple-500"
+                    ? "Loading model..."
                     : micStatus === "requesting_mic"
-                    ? "bg-orange-400"
-                    : "bg-yellow-500"
-                }`}
-              ></div>
-              <span className="text-sm sm:text-base font-medium text-white/90">
-                🎤{" "}
-                {micStatus === "active"
-                  ? "Listening active"
-                  : micStatus === "error"
-                  ? "Mic Error"
-                  : micStatus === "loading_model"
-                  ? "Loading model..."
-                  : micStatus === "requesting_mic"
-                  ? "Requesting mic..."
-                  : "Initializing..."}
-              </span>
-            </div>
+                    ? "Requesting mic..."
+                    : "Initializing..."}
+                </span>
+              </div>
+            )}
 
             {/* --- Main Glass --- */}
             <div
@@ -239,6 +261,26 @@ export default function App() {
                   to start.
                 </span>
               </p>
+
+              {/* Recording Status Indicator */}
+              {recording && (
+                <div className="flex items-center justify-center gap-3 text-red-400 animate-pulse">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                  <span className="font-semibold text-lg">
+                    🎙️ Recording... (stops after 2s of silence)
+                  </span>
+                </div>
+              )}
+
+              {/* Transcribing Status Indicator */}
+              {isTranscribing && (
+                <div className="flex items-center justify-center gap-3 text-blue-400">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="font-semibold text-lg">
+                    🧠 Transcribing with ElevenLabs...
+                  </span>
+                </div>
+              )}
 
               {/* Click to Type */}
               <button
