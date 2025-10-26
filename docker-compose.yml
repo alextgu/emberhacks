@@ -1,0 +1,12 @@
+services:
+  backend:
+    build: .
+    image: emberhacks-backend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - HEADLESS=${HEADLESS:-1}
+    volumes:
+      - ./:/app
+    restart: unless-stopped
