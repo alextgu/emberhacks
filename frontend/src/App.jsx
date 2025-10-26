@@ -32,8 +32,8 @@ export default function App() {
 
   const handleMouseMove = (e) => {
     const { innerWidth, innerHeight } = window;
-    const x = ((e.clientY - innerHeight / 2) / innerHeight) * 15;
-    const y = ((e.clientX - innerWidth / 2) / innerWidth) * 15;
+    const x = ((e.clientY - innerHeight / 2) / innerHeight) * 4;
+    const y = ((e.clientX - innerWidth / 2) / innerWidth) * 4;
     setRotation({ x, y });
   };
 
