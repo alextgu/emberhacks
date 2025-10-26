@@ -1,6 +1,7 @@
-playwright
-google-genai
-python-dotenv
-termcolor
-requests
-flask
+Flask>=2.3
+requests>=2.31
+python-dotenv>=1.0
+playwright>=1.43
+google-genai>=0.16
+termcolor>=2.3
+elevenlabs>=0.2

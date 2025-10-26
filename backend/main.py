@@ -1,22 +1,25 @@
+import os 
+import sys
+# .\venv\Scripts\python.exe .\backend\main.py
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file
+load_dotenv()
+
 import time
 from typing import Any, List, Tuple
 from playwright.sync_api import sync_playwright
 from google.genai import errors as genai_errors
 from google import genai
 import re
-import os
-import sys
 from google.genai import types
 from google.genai.types import Content, Part
 import termcolor
 import base64
 import json
+from elevenlabs_utils import transcribe_audio_file 
 
-# .\venv\Scripts\python.exe .\backend\main.py
-from dotenv import load_dotenv
 
-# Load environment variables from a .env file
-load_dotenv()
 
 # Initialize genai Client from environment to avoid embedding secrets in code.
 # Provide your API key by setting the environment variable GOOGLE_API_KEY.
@@ -627,6 +630,28 @@ app = Flask(__name__)
 # Playwright at module import time to avoid greenlet/thread issues.
 agent = AgentRunner(client)
 
+
+@app.route('/transcribe_audio', methods=['POST'])
+def api_transcribe_audio():
+    if not agent.running:
+        return jsonify({"error": "Agent not running"}), 400
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+    temp_path = f"/tmp/{file.filename}"
+    file.save(temp_path)
+
+    try:
+        transcription = transcribe_audio_file(temp_path)  # <-- use your existing function
+    finally:
+        os.remove(temp_path)
+
+    # Queue transcription text into the agent
+    agent.enqueue_command(transcription) # type: ignore
+
+    return jsonify({"status": "transcribed", "text": transcription})
 
 @app.route('/start', methods=['POST'])
 def api_start():
