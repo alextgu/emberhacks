@@ -5,3 +5,4 @@ playwright>=1.43
 google-genai>=0.16
 google-generativeai>=0.8
 termcolor>=2.3
+elevenlabs>=1.0

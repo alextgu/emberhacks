@@ -1,6 +1,8 @@
 import os 
 from pathlib import Path
 # .\venv\Scripts\python.exe .\backend\main.py
+import sys
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from project root
