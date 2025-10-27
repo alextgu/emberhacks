@@ -1,17 +1,30 @@
 # 🎙️ ZED - Voice-Controlled AI Assistant
 
-An intelligent AI assistant powered by Google Gemini, featuring voice commands, speech-to-text, and text-to-speech capabilities.
+**Zed** is your **autonomous AI study partner** that connects directly to your student account and responds to your **voice** to create a personalized, productive learning experience. 
+Ask questions about **deadlines, study tips, or how to approach a problem** — Zed provides guidance that **challenges your brain to learn**, rather than simply giving you answers to copy.
 
-## ✨ Features
+Check it out on Devpost:  
+🔗 [https://devpost.com/software/zed-7z0wg4](https://devpost.com/software/zed-7z0wg4?_gl=1*1dkw02l*_gcl_au*MzE5MzI5ODc2LjE3NTQ5NTY4OTQ.*_ga*MjgxNzY0MDIwLjE3NTQ5NTY4OTQ.*_ga_0YHJK3Y10M*czE3NjE1NzY1MDgkbzEyOCRnMSR0MTc2MTU3NzA2NSRqNTckbDAkaDA.)
 
-- 🎤 **Voice Commands** - Speak naturally to control your AI assistant
-- 🗣️ **Text-to-Speech** - AI responses spoken in natural voice
-- 🔊 **Voice Activity Detection** - Automatically stops recording after 2s of silence
-- 🎯 **Smart Wake Word** - Say "Hey Zed" to activate (optional)
-- 🤖 **AI-Powered** - Google Gemini for intelligent responses
-- 🌐 **Browser Automation** - Control browser with voice commands
-- 🔒 **Privacy-First** - Wake word detection runs locally in browser
+## 🧠 What It Does
 
+### 🤖 Zed, Your Study Buddy
+Zed is your autonomous AI study partner that connects directly to your student account and responds to your voice to create a personalized and highly productive learning experience. Ask questions about deadlines, study tips, or how to approach a problem—Zed will provide guidance that challenges your brain to learn rather than simply giving you answers to copy.
+
+### 🔐 Authenticates as Your Study Buddy
+Securely logs into your **Canvas** or **Blackboard** account via **Auth0**, just like a studious classmate with access to the same materials you do.  
+Encrypted credential storage ensures your login information stays safe while enabling autonomous course access.
+
+### 📚 Intelligently Scrapes Your Actual Courses
+Automatically downloads your **syllabus**, **professor’s lecture slides**, and **assignments** from your enrolled courses.  
+Extracts exam dates, topics, and deadlines using the **Gemini 2.5 Compute engine** — no manual input needed.
+
+### 🎤 Provides Natural Voice Interaction
+Wake word activation with **Porcupine** — just say “Hey Zed!”  
+Receive spoken responses via **ElevenLabs text-to-speech** that sound like a supportive study buddy.  
+Study while cooking, exercising, or walking around — Zed makes learning seamless and non-distracting.
+
+---
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -115,7 +128,7 @@ You should see:
 1. Wait for green "Listening active" indicator
 2. Say "Hey Zed"
 3. Speak your command
-4. Recording stops automatically after 2s of silence
+4. Recording stops automatically after 3s of silence
 
 **Option 2: Hold to Speak**
 1. Click and hold "Hold to Speak" button
@@ -127,246 +140,6 @@ You should see:
 2. Type your command
 3. Press Enter
 
-### Example Commands
-
-- "Open Google"
-- "Search for Python tutorials"
-- "What's the weather today"
-- "Summarize this page"
-- "Click the first link"
-
-### Test Voice Features
-
-**Test Text-to-Speech:**
-- Click the "🎵 Test Voice" button on the main screen
-- You should hear ZED speak
-
-**Test Speech-to-Text:**
-- Click "Hold to Speak"
-- Say something
-- Release and wait
-- Your words should appear as text
-
-## 📁 Project Structure
-
-```
-emberhacks/
-├── backend/
-│   ├── main.py                 # Flask API server
-│   ├── agent_runner.py         # AI agent logic
-│   ├── elevenlabs_utils.py     # Speech-to-text
-│   ├── elevenlabs_tts.py       # Text-to-speech
-│   └── browser_computer.py     # Browser automation
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx             # Main application
-│   │   ├── hooks/
-│   │   │   ├── useWakeWord.js  # Wake word detection
-│   │   │   ├── useRecorder.js  # Audio recording
-│   │   │   └── useTextToSpeech.js # TTS playback
-│   │   └── components/         # UI components
-│   └── public/
-│       └── models/             # Wake word models
-├── .env                        # Backend API keys
-├── frontend/.env               # Frontend API keys
-└── requirements.txt            # Python dependencies
-```
-
-## 🔧 Configuration
-
-### Change Recording Duration
-
-In `frontend/src/hooks/useRecorder.js`:
-```javascript
-const SILENCE_DURATION = 2000; // Change to 3000 for 3 seconds
-```
-
-### Change Voice (Text-to-Speech)
-
-In `frontend/src/App.jsx`:
-```javascript
-speak("Hello!", "21m00Tcm4TlvDq8ikWAM"); // Rachel's voice
-```
-
-Available voices in `TEXT_TO_SPEECH_GUIDE.md`
-
-### Enable/Disable Wake Word
-
-In `frontend/src/App.jsx`:
-```javascript
-const shouldListen = phase === "main"; // true = enabled
-const shouldListen = false; // false = disabled
-```
-
-## 🐛 Troubleshooting
-
-### Backend Won't Start
-
-**Error: "Missing ELEVENLABS_API_KEY"**
-- Make sure `.env` file exists in project root
-- Check API key is correct (no quotes, no spaces)
-- Restart backend after adding keys
-
-**Error: "ModuleNotFoundError"**
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Frontend Issues
-
-**Wake Word Not Working**
-- Check `VITE_PORCUPINE_KEY` in `frontend/.env`
-- Restart frontend after adding key: `npm run dev`
-- Grant microphone permission in browser
-- Check for "Listening active" green indicator
-
-**No Audio Recording**
-- Grant microphone permission
-- Check browser console (F12) for errors
-- Try different browser
-- Check microphone works in other apps
-
-**Transcription Not Working**
-- Make sure backend is running on port 8000
-- Check `ELEVENLABS_API_KEY` in `.env`
-- Check backend terminal for errors
-- Verify you have ElevenLabs API credits
-
-**Text-to-Speech Not Working**
-- Check backend is running
-- Verify `ELEVENLABS_API_KEY` in `.env`
-- Check browser console for errors
-- Try the "🎵 Test Voice" button
-
-### Connection Issues
-
-**"ERR_CONNECTION_REFUSED"**
-- Backend is not running
-- Start backend: `python backend/main.py`
-- Check it's running on port 8000
-
-**CORS Errors**
-- Backend should allow all origins (already configured)
-- Try restarting both frontend and backend
-
-## 📊 API Endpoints
-
-### Backend API
-
-**POST `/transcribe_audio`**
-- Converts audio to text
-- Body: multipart/form-data with audio file
-- Returns: `{"status": "transcribed", "text": "..."}`
-
-**POST `/text_to_speech`**
-- Converts text to speech
-- Body: `{"text": "...", "voice_id": "..."}`
-- Returns: MP3 audio file
-
-**POST `/command`**
-- Sends command to AI agent
-- Body: `{"command": "..."}`
-- Returns: `{"status": "queued", "command": "..."}`
-
-**POST `/start`**
-- Starts the AI agent
-- Body: `{"goal": "..."}`
-- Returns: `{"status": "started"}`
-
-**GET `/status`**
-- Gets agent status
-- Returns: Agent state and info
-
-## 💰 Cost Considerations
-
-### API Usage
-
-**ElevenLabs:**
-- Free tier: ~10,000 characters/month
-- Speech-to-text: Pay per character transcribed
-- Text-to-speech: Pay per character generated
-- Check: https://elevenlabs.io/pricing
-
-**Google Gemini:**
-- Free tier available
-- Check: https://ai.google.dev/pricing
-
-**Porcupine:**
-- Free tier available
-- Wake word detection runs locally (no per-use cost)
-- Check: https://picovoice.ai/pricing
-
-## 🔒 Security & Privacy
-
-- ✅ API keys stored in `.env` files (gitignored)
-- ✅ Wake word detection runs locally in browser
-- ✅ Audio only sent to server when recording
-- ✅ Temporary files deleted after transcription
-- ✅ No audio stored on backend
-
-**Best Practices:**
-- Never commit `.env` files
-- Rotate keys if exposed
-- Monitor API usage regularly
-- Use environment variables in production
-
-## 📚 Documentation
-
-- **TEXT_TO_SPEECH_GUIDE.md** - Complete TTS integration guide
-- **ENV_SETUP.md** - Environment variables setup
-- **DEBUG_CHECKLIST.md** - Troubleshooting guide
-
-## 🛠️ Development
-
-### Run in Development Mode
-
-**Backend:**
-```bash
-source venv/bin/activate
-python backend/main.py
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-
-### Build for Production
-
-**Frontend:**
-```bash
-cd frontend
-npm run build
-```
-
-### Run Tests
-
-**Test ElevenLabs API:**
-```bash
-python backend/test_elevenlabs.py
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📝 License
-
-[Your License Here]
-
-## 🆘 Support
-
-For issues or questions:
-1. Check the troubleshooting section above
-2. Review documentation files
-3. Check browser console (F12) and backend logs
-4. Verify all API keys are correct
 
 ## ✅ Quick Checklist
 
@@ -388,7 +161,5 @@ Before starting, make sure you have:
 
 Open http://localhost:5173 and start talking to ZED!
 
----
 
-**Made with ❤️ for EmberHacks**
 
