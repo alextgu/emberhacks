@@ -1,8 +1,9 @@
 Flask>=2.3
 requests>=2.31
 python-dotenv>=1.0
-playwright>=1.43
+playwright>=1.43npm
 google-genai>=0.16
 google-generativeai>=0.8
 termcolor>=2.3
 elevenlabs>=1.0
+flask-cors>=3.0

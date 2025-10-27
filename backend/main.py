@@ -14,6 +14,7 @@ from google import genai
 from elevenlabs_utils import transcribe_audio_file
 from elevenlabs_tts import text_to_speech, text_to_speech_stream
 from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
 from agent_runner import AgentRunner
 
 # Initialize genai from environment to avoid embedding secrets in code.
@@ -42,6 +43,7 @@ page = None
 excluded_functions = []
 
 app = Flask(__name__)
+CORS(app)
 # Agent will initialize Playwright and page inside its thread; do not start
 # Playwright at module import time to avoid greenlet/thread issues.
 agent = AgentRunner(client)

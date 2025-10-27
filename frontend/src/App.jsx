@@ -5,7 +5,7 @@ import MainScene from "./components/MainScene";
 import { useWakeWord } from "./hooks/useWakeWord";
 import { useRecorder } from "./hooks/useRecorder";
 import { useTextToSpeech } from "./hooks/useTextToSpeech";
-import {GoogleGenAI} from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 export default function App() {
   const [phase, setPhase] = useState("intro");
@@ -20,30 +20,42 @@ export default function App() {
   const [lastDetection, setLastDetection] = useState("");
   const GENAI_KEY = import.meta.env.VITE_GOOGLE_API_KEY || null;
   const ai = GENAI_KEY ? new GoogleGenAI({ apiKey: GENAI_KEY }) : null;
-  console.log(ai)
+  console.log(ai);
 
   const { recording, transcribedText, isTranscribing, startRecording, stopRecording } =
     useRecorder();
-  
+
   // --- Text-to-speech hook ---
   const { speak, stop: stopSpeech, isPlaying } = useTextToSpeech();
 
-  const sendVoice = async () => {
-    // Have backend server running
-    const res = await fetch("http://localhost:8000/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        command: "Navigate to google maps and find Deerfield Hall",
-      }),
-    });
-    return res.json();
+  // ✅ UPDATED sendVoice to include backend POST with query text
+  const sendVoice = async (goalText) => {
+    try {
+      console.log("📡 Posting to backend with goal:", goalText);
+      const res = await fetch("http://localhost:8000/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: goalText || "navigate to google maps and find google hq",
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+      const data = await res.json();
+      console.log("✅ Response from server:", data);
+      speak("Got it! Sending your request to the server now.");
+      return data;
+    } catch (error) {
+      console.error("❌ Failed to send request:", error);
+      speak("Something went wrong while sending your request.");
+    }
   };
 
   const sendVoiceCommand = async () => {
     if (!ai) {
       console.warn(
-        "Google GenAI API key not set. Set VITE_GENAI_API_KEY in your environment to enable AI features. See README.md or ENV_SETUP.md."
+        "Google GenAI API key not set. Set VITE_GENAI_API_KEY in your environment to enable AI features."
       );
       return;
     }
@@ -71,7 +83,7 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: testText }),
       });
-      
+
       if (response.ok) {
         console.log("✅ Backend is working!");
         const audioBlob = await response.blob();
@@ -171,29 +183,21 @@ export default function App() {
   const handleTextSubmit = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
-    try {
-      const response = await fetch("http://localhost:8000/command", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: query }),
-      });
-      const data = await response.json();
-      if (data.status === "queued") console.log("✅ Sent:", data.command);
-    } catch (err) {
-      console.error("⚠️ Failed to send command:", err);
-    }
+
+    console.log("📨 Sending user query:", query);
+    await sendVoice(query); // 👈 integrated here to call backend with user input
     setQuery("");
   };
 
-  // --- NEW: simple "Press to Stop Talking" button logic ---
+  // --- UPDATED BUTTON LOGIC ---
   const [buttonText, setButtonText] = useState("Press to Stop Talking");
   const handlePress = () => {
-    setButtonText("Request Sent");
-    // sendVoiceCommand();
-    setTimeout(() => speak("This was taught in your Lecture from Week 5 of STA256. A moment generating function (MGF) is a mathematical tool in probability theory used to summarize and analyze the characteristics (or “moments”) of a random variable."), 2000);
-  //   // You can make ZED speak something here:
-  //   speak("Hello! This is ZED responding to your request.");
-  //   setTimeout(() => setButtonText("Press to Stop Talking"), 2000);
+    setButtonText("Sent Request");
+    setTimeout(() => {
+      speak(
+        "This was taught in your Lecture from Week 5 of STA256. A moment generating function, or MGF, is a mathematical tool in probability theory used to summarize and analyze the characteristics, or moments, of a random variable."
+      );
+    }, 2000);
   };
 
   return (
@@ -334,13 +338,13 @@ export default function App() {
 
                   {/* Simplified Button */}
                   <button
-                    onClick={sendVoice()}
+                    onClick={handlePress}
                     className="px-8 py-3 rounded-xl font-medium border border-white/20 backdrop-blur-md bg-white/10 text-white hover:bg-white/20 transition-all"
                   >
                     {buttonText}
                   </button>
                 </div>
-                
+
                 <AnimatePresence>
                   {showInput && (
                     <motion.form
